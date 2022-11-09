@@ -54,7 +54,7 @@ OTPURI otpuri = new OTPURI.Builder()
                     .secret("MySecret")
                     .build();
 System.out.println(otpuri.getOTPAuthString());
-System.out.println(otpuri.getAuthStringDecoded());
+System.out.println(otpuri.getOTPAuthStringDecoded());
 ```
 Returns:
 ```
@@ -193,5 +193,8 @@ This library was compiled in Java 19. If you need an earlier version, fork the r
 
 Version Update Notes
 ---
+* **1.0.2**
+    * Changed getAuthStringDecoded to getOTPAuthStringDecoded
+
 * **1.0.1**
     * First Release

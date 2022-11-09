@@ -257,7 +257,7 @@ public class OTPURI {
 	 *
 	 * @return - String
 	 */
-	public String getAuthStringDecoded() {
+	public String getOTPAuthStringDecoded() {
 		return URLDecoder.decode(getOTPAuthString(), StandardCharsets.US_ASCII);
 	}
 
