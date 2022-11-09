@@ -5,6 +5,10 @@ public enum Algorithm {
 	SHA256,
 	SHA512;
 
+	/**
+	 * Returns a String of the Algorithm enum
+	 * @return - String
+	 */
 	public String get(Algorithm this) {
 		return switch(this) {
 		    case SHA1 ->   "SHA1";
@@ -13,6 +17,11 @@ public enum Algorithm {
 		};
 	}
 
+	/**
+	 * Provide a String of the Algorithm enum and get back the enum.
+	 * @param algorithm = String of the enum
+	 * @return - Algorithm enum
+	 */
 	public static Algorithm getAlgorithm(String algorithm) {
 		return switch(algorithm) {
 			case "SHA1" ->   Algorithm.SHA1;

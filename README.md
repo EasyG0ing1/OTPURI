@@ -27,7 +27,11 @@ You can even use it from a Groovy script!
 )
 ```
 
-
+### Modular Apps
+If your app is modular, then add this to your ```module-info.java``` file
+```Java
+requires com.simtechdata.otpuri;
+```
 
 ## Usage
 
@@ -183,6 +187,7 @@ Mike Sims
 
 [sims.mike@gmail.com](mailto:sims.mike@gmail.com)
 
+This library was compiled in Java 19. If you need an earlier version, fork the repository, modify as needed and compile into a jar file then import into your project.
 
 ---
 

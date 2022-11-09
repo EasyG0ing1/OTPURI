@@ -22,10 +22,20 @@ public class OTPURI {
 	private final        String    paramDigits; //Number of digits to return, default = 6
 	private final        String    paramPeriod; //In Seconds, default = 30
 
+	/**
+	 * Builder class
+	 */
 	public static class Builder {
 
+		/**
+		 * Default Constructor
+		 */
 		public Builder() {}
 
+		/**
+		 * Constructor where you can pass in the OTPAuth code retrieved from a QR code
+		 * @param otpAuthString - OTPAuth String from QR Code
+		 */
 		public Builder(String otpAuthString) {
 			Map<OTPParts, String> partsMap = getPartsMap(otpAuthString);
 			if (partsMap != null) {
@@ -78,56 +88,90 @@ public class OTPURI {
 			if (extractIssuer) {
 				if (map.containsKey(ISSUER)) {map.put(ISSUER_LABEL, map.get(ISSUER));}
 			}
-            setFromAuthString = true;
+			setFromAuthString = true;
 			return map;
 		}
 
 		private String    labelIssuer;
 		private String    accountName;
-		private String    paramSecret    = "";
-		private String    paramIssuer    = "";
-		private Algorithm paramAlgorithm = Algorithm.SHA1; //Options: SHA1, SHA256, SHA512; default = SHA1
-		private String    paramDigits    = "6"; //Number of digits to return, default = 6
-		private String    paramPeriod    = "30"; //In Seconds, default = 30
-        private boolean setFromAuthString = false;
+		private String    paramSecret       = "";
+		private String    paramIssuer       = "";
+		private Algorithm paramAlgorithm    = Algorithm.SHA1; //Options: SHA1, SHA256, SHA512; default = SHA1
+		private String    paramDigits       = "6"; //Number of digits to return, default = 6
+		private String    paramPeriod       = "30"; //In Seconds, default = 30
+		private boolean   setFromAuthString = false;
 
+		/**
+		 * Pass in the name of Issuer to be assigned to the Label portion of the OTPAuth String
+		 * @param issuer - String
+		 */
 		public Builder labelIssuer(String issuer) {
 			this.labelIssuer = issuer;
 			return this;
 		}
 
+		/**
+		 * Pass in the Issuer from the Parameter portion of the OTPAuth String.
+		 * This might be different under unknown special cases
+		 * @param issuer - String
+		 */
 		public Builder paramIssuer(String issuer) {
 			this.paramIssuer = issuer;
 			return this;
 		}
 
+		/**
+		 * Pass in the name of the issuer to be used on both the Label and Parameter oprtion of the OTPAuth String
+		 * @param issuer - String
+		 */
 		public Builder issuer(String issuer) {
 			this.labelIssuer = issuer;
 			this.paramIssuer = issuer;
 			return this;
 		}
 
+		/**
+		 * Pass in the account name of the account that logs into the web site
+		 * @param accountName - String
+		 */
 		public Builder accountName(String accountName) {
 			this.accountName = accountName;
 			return this;
 		}
 
+		/**
+		 * Pass in the secret that was generated at the time two factor authentication was enabled on the website.
+		 * @param secret - String
+		 */
 		public Builder secret(String secret) {
 			this.paramSecret = secret;
 			return this;
 		}
 
+		/**
+		 * Pass in the algorithm that is used to generate the One Time Password
+		 * This must be of the Algorithm enum datatype
+		 * @param algorithm - Algorithm enum
+		 */
 		public Builder algorithm(Algorithm algorithm) {
 			this.paramAlgorithm = algorithm;
 			return this;
 		}
 
+		/**
+		 * Pass in the number of One Time Password digits what will be returned when the OTP is generated
+		 * @param returnDigits - int (6, 7, or 8)
+		 */
 		public Builder digits(int returnDigits) {
 			if (returnDigits < 6 || returnDigits > 8) {throw new RuntimeException("digits must be one of these numbers: 6, 7, or 8");}
 			this.paramDigits = String.valueOf(returnDigits);
 			return this;
 		}
 
+		/**
+		 * Pass in the amount of time that the One Time Password will be valid
+		 * @param period - int (15, 30 or 60)
+		 */
 		public Builder period(int period) {
 			boolean valid = (period == 15) || (period == 30) || (period == 60);
 			if (!valid) {throw new RuntimeException("period can only be 15, 30, or 60");}
@@ -135,20 +179,21 @@ public class OTPURI {
 			return this;
 		}
 
+		/**
+		 * This returns the OTPURI class that has been built with this Builder class
+		 */
 		public OTPURI build() {
-            if (paramSecret.isEmpty())
-                throw new RuntimeException("No secret was provided yet it is mandatory.");
+			if (paramSecret.isEmpty()) {throw new RuntimeException("No secret was provided yet it is mandatory.");}
 
-            if (accountName.isEmpty())
-                accountName = "UnknownUsername";
+			if (accountName.isEmpty()) {accountName = "UnknownUsername";}
 
-            if (setFromAuthString) {
-                if (labelIssuer.isEmpty() && paramIssuer.isEmpty()) {
-                    String issuer = randomCompany();
-                    labelIssuer = issuer;
-                    paramIssuer = issuer;
-                }
-            }
+			if (setFromAuthString) {
+				if (labelIssuer.isEmpty() && paramIssuer.isEmpty()) {
+					String issuer = randomCompany();
+					labelIssuer = issuer;
+					paramIssuer = issuer;
+				}
+			}
 			return new OTPURI(this);
 		}
 
@@ -193,9 +238,10 @@ public class OTPURI {
 	}
 
 	/**
-	 * Public Getters
+	 * gets the HTML formatted OTPAuth
+	 *
+	 * @return - String
 	 */
-
 	public String getOTPAuthString() {
 		try {
 			URI uri = new URI(resource, protocol, getLabel(), getParameters(), null);
@@ -206,34 +252,74 @@ public class OTPURI {
 		}
 	}
 
+	/**
+	 * gets the friendly formatted OTPAuth (not HTML formatted)
+	 *
+	 * @return - String
+	 */
 	public String getAuthStringDecoded() {
 		return URLDecoder.decode(getOTPAuthString(), StandardCharsets.US_ASCII);
 	}
 
+	/**
+	 * gets the account name portion of the OTPAuth
+	 *
+	 * @return - String
+	 */
 	public String getAccountName() {
 		return accountName;
 	}
 
+	/**
+	 * gets the secret key used to generate the synchronized One Time Password
+	 *
+	 * @return - String
+	 */
 	public String getSecret() {
 		return paramSecret;
 	}
 
+	/**
+	 * gets the Issuer from the OTPAuth String
+	 *
+	 * @return - String
+	 */
 	public String getIssuer() {
 		return paramIssuer;
 	}
 
+	/**
+	 * gets the algorithm from the OTPAuth String
+	 *
+	 * @return - String
+	 */
 	public String getAlgorithm() {
 		return paramAlgorithm.get();
 	}
 
+	/**
+	 * gets the number of digits that the One Time Password algorithm should generate
+	 *
+	 * @return - int (6, 7 or 8)
+	 */
 	public int getDigits() {
 		return Integer.parseInt(paramDigits);
 	}
 
+	/**
+	 * gets the period of time when the user can enter the One Time Password before the password expires
+	 *
+	 * @return - int (15, 30 or 60)
+	 */
 	public int getPeriod() {
 		return Integer.parseInt(paramPeriod);
 	}
 
+	/**
+	 * Overriden toString which will return the HTML formatted version of the OTPAuth String
+	 *
+	 * @return - String
+	 */
 	@Override
 	public String toString() {
 		return getOTPAuthString();
