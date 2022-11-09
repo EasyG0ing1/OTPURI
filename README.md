@@ -9,21 +9,21 @@ The Library is available as a Maven dependency on Central. Add the following to 
 <dependency>
     <groupId>com.simtechdata</groupId>
     <artifactId>OTPURI</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.3</version>
 </dependency>
 ```
 
 Or, if using Gradle to build, add this to your Gradle build file
 
 ```groovy
-compile group: 'com.simtechdata', name: 'OTPURI', version: 1.0.1
+compile group: 'com.simtechdata', name: 'OTPURI', version: 1.0.3
 ```
 
 You can even use it from a Groovy script!
 
 ```groovy
 @Grapes(
-  @Grab(group='com.simtechdata', module='OTPURI', version=1.0.1)
+  @Grab(group='com.simtechdata', module='OTPURI', version=1.0.3)
 )
 ```
 
@@ -193,6 +193,9 @@ This library was compiled in Java 19. If you need an earlier version, fork the r
 
 Version Update Notes
 ---
+* **1.0.3**
+    * Fixed bug in Issuer balancing logic
+
 * **1.0.2**
     * Changed getAuthStringDecoded to getOTPAuthStringDecoded
 

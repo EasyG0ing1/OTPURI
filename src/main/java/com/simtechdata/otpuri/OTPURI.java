@@ -15,7 +15,7 @@ public class OTPURI {
 	private static final String    resource = "otpauth";
 	private static final String    protocol = "totp";
 	private final        String    labelIssuer;
-	private final        String    accountName;
+	private final        String    labelAccount;
 	private final        String    paramSecret;
 	private final        String    paramIssuer;
 	private final        Algorithm paramAlgorithm; //Options: SHA1, SHA256, SHA512; default = SHA1
@@ -34,6 +34,7 @@ public class OTPURI {
 
 		/**
 		 * Constructor where you can pass in the OTPAuth code retrieved from a QR code
+		 *
 		 * @param otpAuthString - OTPAuth String from QR Code
 		 */
 		public Builder(String otpAuthString) {
@@ -41,13 +42,13 @@ public class OTPURI {
 			if (partsMap != null) {
 				for (OTPParts part : partsMap.keySet()) {
 					switch (part) {
-						case ISSUER_LABEL -> labelIssuer = partsMap.get(ISSUER_LABEL);
-						case ACCOUNT_NAME -> accountName = partsMap.get(ACCOUNT_NAME);
-						case SECRET -> paramSecret = partsMap.get(SECRET);
-						case ISSUER -> paramIssuer = partsMap.get(ISSUER);
-						case ALGORITHM -> paramAlgorithm = Algorithm.getAlgorithm(partsMap.get(ALGORITHM));
-						case DIGITS -> paramDigits = partsMap.get(DIGITS);
-						case PERIOD -> paramPeriod = partsMap.get(PERIOD);
+						case LABEL_ISSUER -> labelIssuer = partsMap.get(LABEL_ISSUER);
+						case LABEL_ACCOUNT -> accountName = partsMap.get(LABEL_ACCOUNT);
+						case PARAM_SECRET -> paramSecret = partsMap.get(PARAM_SECRET);
+						case PARAM_ISSUER -> paramIssuer = partsMap.get(PARAM_ISSUER);
+						case PARAM_ALGORITHM -> paramAlgorithm = Algorithm.getAlgorithm(partsMap.get(PARAM_ALGORITHM));
+						case PARAM_DIGITS -> paramDigits = partsMap.get(PARAM_DIGITS);
+						case PARAM_PERIOD -> paramPeriod = partsMap.get(PARAM_PERIOD);
 					}
 				}
 			}
@@ -59,18 +60,16 @@ public class OTPURI {
 			if (!finalString.contains(resource)) {
 				return null;
 			}
-			String[] lines         = finalString.replaceFirst(resource + "://(hotp|totp)/", "").replaceFirst(resource + "://(hotp|totp)", "").split("\\?");
-			String   first         = lines[0];
-			String   last          = lines[1];
-			boolean  extractIssuer = false;
+			String[] lines = finalString.replaceFirst(resource + "://(hotp|totp)/", "").replaceFirst(resource + "://(hotp|totp)", "").split("\\?");
+			String   first = lines[0];
+			String   last  = lines[1];
 			if (first.contains(":")) {
 				String[] labelParts = first.split(":");
-				map.put(ISSUER_LABEL, labelParts[ISSUER_LABEL.index()]);
-				map.put(ACCOUNT_NAME, labelParts[ACCOUNT_NAME.index()]);
+				map.put(LABEL_ISSUER, labelParts[LABEL_ISSUER.index()]);
+				map.put(LABEL_ACCOUNT, labelParts[LABEL_ACCOUNT.index()]);
 			}
 			else if (first.length() > 2) {
-				map.put(ACCOUNT_NAME, first);
-				extractIssuer = true;
+				map.put(LABEL_ACCOUNT, first);
 			}
 			String[] otpParameterArray = last.split("&");
 			for (String otpParameter : otpParameterArray) {
@@ -78,16 +77,19 @@ public class OTPURI {
 				String   parameterLabel      = parameterLabelValue[0].toLowerCase();
 				String   parameterValue      = parameterLabelValue[1];
 				switch (parameterLabel) {
-					case "secret" -> map.put(SECRET, parameterValue);
-					case "issuer" -> map.put(ISSUER, parameterValue);
-					case "algorithm" -> map.put(ALGORITHM, parameterValue.toUpperCase());
-					case "digits" -> map.put(DIGITS, parameterValue);
-					case "period" -> map.put(PERIOD, parameterValue);
+					case "secret" -> map.put(PARAM_SECRET, parameterValue);
+					case "issuer" -> map.put(PARAM_ISSUER, parameterValue);
+					case "algorithm" -> map.put(PARAM_ALGORITHM, parameterValue.toUpperCase());
+					case "digits" -> map.put(PARAM_DIGITS, parameterValue);
+					case "period" -> map.put(PARAM_PERIOD, parameterValue);
 				}
 			}
-			if (extractIssuer) {
-				if (map.containsKey(ISSUER)) {map.put(ISSUER_LABEL, map.get(ISSUER));}
-			}
+			boolean hasIssuerParameter = map.containsKey(PARAM_ISSUER);
+			boolean hasIssuerLabel     = map.containsKey(LABEL_ISSUER);
+			boolean addIssuerParameter = hasIssuerLabel && !hasIssuerParameter;
+			boolean addIssuerLabel     = hasIssuerParameter && !hasIssuerLabel;
+			if (addIssuerParameter) {map.put(PARAM_ISSUER, map.get(LABEL_ISSUER));}
+			if (addIssuerLabel) {map.put(LABEL_ISSUER, map.get(PARAM_ISSUER));}
 			setFromAuthString = true;
 			return map;
 		}
@@ -103,6 +105,7 @@ public class OTPURI {
 
 		/**
 		 * Pass in the name of Issuer to be assigned to the Label portion of the OTPAuth String
+		 *
 		 * @param issuer - String
 		 */
 		public Builder labelIssuer(String issuer) {
@@ -113,6 +116,7 @@ public class OTPURI {
 		/**
 		 * Pass in the Issuer from the Parameter portion of the OTPAuth String.
 		 * This might be different under unknown special cases
+		 *
 		 * @param issuer - String
 		 */
 		public Builder paramIssuer(String issuer) {
@@ -122,6 +126,7 @@ public class OTPURI {
 
 		/**
 		 * Pass in the name of the issuer to be used on both the Label and Parameter oprtion of the OTPAuth String
+		 *
 		 * @param issuer - String
 		 */
 		public Builder issuer(String issuer) {
@@ -132,6 +137,7 @@ public class OTPURI {
 
 		/**
 		 * Pass in the account name of the account that logs into the web site
+		 *
 		 * @param accountName - String
 		 */
 		public Builder accountName(String accountName) {
@@ -141,6 +147,7 @@ public class OTPURI {
 
 		/**
 		 * Pass in the secret that was generated at the time two factor authentication was enabled on the website.
+		 *
 		 * @param secret - String
 		 */
 		public Builder secret(String secret) {
@@ -151,6 +158,7 @@ public class OTPURI {
 		/**
 		 * Pass in the algorithm that is used to generate the One Time Password
 		 * This must be of the Algorithm enum datatype
+		 *
 		 * @param algorithm - Algorithm enum
 		 */
 		public Builder algorithm(Algorithm algorithm) {
@@ -160,6 +168,7 @@ public class OTPURI {
 
 		/**
 		 * Pass in the number of One Time Password digits what will be returned when the OTP is generated
+		 *
 		 * @param returnDigits - int (6, 7, or 8)
 		 */
 		public Builder digits(int returnDigits) {
@@ -170,6 +179,7 @@ public class OTPURI {
 
 		/**
 		 * Pass in the amount of time that the One Time Password will be valid
+		 *
 		 * @param period - int (15, 30 or 60)
 		 */
 		public Builder period(int period) {
@@ -206,7 +216,7 @@ public class OTPURI {
 
 	private OTPURI(Builder build) {
 		this.labelIssuer    = build.labelIssuer;
-		this.accountName    = build.accountName;
+		this.labelAccount   = build.accountName;
 		this.paramSecret    = build.paramSecret;
 		this.paramIssuer    = build.paramIssuer;
 		this.paramAlgorithm = build.paramAlgorithm;
@@ -226,7 +236,7 @@ public class OTPURI {
 	}
 
 	private String getLabel() {
-		return "/" + labelIssuer + ":" + accountName;
+		return "/" + labelIssuer + ":" + labelAccount;
 	}
 
 	private String getParameters() {
@@ -266,8 +276,8 @@ public class OTPURI {
 	 *
 	 * @return - String
 	 */
-	public String getAccountName() {
-		return accountName;
+	public String getLabelAccount() {
+		return labelAccount;
 	}
 
 	/**
