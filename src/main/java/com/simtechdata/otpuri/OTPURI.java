@@ -1,5 +1,7 @@
 package com.simtechdata.otpuri;
 
+import com.warrenstrange.googleauth.GoogleAuthenticator;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -12,15 +14,16 @@ import static com.simtechdata.otpuri.OTPParts.*;
 
 public class OTPURI {
 
-	private static final String    resource = "otpauth";
-	private static final String    protocol = "totp";
-	private final        String    labelIssuer;
-	private final        String    labelAccount;
-	private final        String    paramSecret;
-	private final        String    paramIssuer;
-	private final        Algorithm paramAlgorithm; //Options: SHA1, SHA256, SHA512; default = SHA1
-	private final        String    paramDigits; //Number of digits to return, default = 6
-	private final        String    paramPeriod; //In Seconds, default = 30
+	private static final String              resource = "otpauth";
+	private static final String              protocol = "totp";
+	private final        String              labelIssuer;
+	private final        String              labelAccount;
+	private final        String              paramSecret;
+	private final        String              paramIssuer;
+	private final        Algorithm           paramAlgorithm; //Options: SHA1, SHA256, SHA512; default = SHA1
+	private final        String              paramDigits; //Number of digits to return, default = 6
+	private final        String              paramPeriod; //In Seconds, default = 30
+	private final        GoogleAuthenticator gAuth;
 
 	/**
 	 * Builder class
@@ -222,6 +225,7 @@ public class OTPURI {
 		this.paramAlgorithm = build.paramAlgorithm;
 		this.paramDigits    = build.paramDigits;
 		this.paramPeriod    = build.paramPeriod;
+		this.gAuth          = new GoogleAuthenticator();
 	}
 
 	private String cleanSecret() {
@@ -245,6 +249,32 @@ public class OTPURI {
 			   ((paramAlgorithm.get().isEmpty()) ? paramAlgorithm : "&algorithm=" + paramAlgorithm) +
 			   ((paramDigits.isEmpty()) ? paramDigits : "&digits=" + paramDigits) +
 			   ((paramPeriod.isEmpty()) ? paramPeriod : "&period=" + paramPeriod);
+	}
+
+	private String formatOTPString(String otpString) {
+		int digits = Integer.parseInt(paramDigits);
+		int delta  = digits - otpString.length();
+		return "0".repeat(Math.max(0, delta)) + otpString;
+	}
+
+	private String splitOTP(String otpString) {
+		String otpLeft  = "";
+		String otpRight = "";
+		switch (paramDigits) {
+			case "6" -> {
+				otpLeft  = otpString.substring(0, 3);
+				otpRight = otpString.substring(3, 6);
+			}
+			case "7" -> {
+				otpLeft  = otpString.substring(0, 3);
+				otpRight = otpString.substring(3, 7);
+			}
+			case "8" -> {
+				otpLeft  = otpString.substring(0, 4);
+				otpRight = otpString.substring(4, 8);
+			}
+		}
+		return otpLeft + "-" + otpRight;
 	}
 
 	/**
@@ -323,6 +353,65 @@ public class OTPURI {
 	 */
 	public int getPeriod() {
 		return Integer.parseInt(paramPeriod);
+	}
+
+	/**
+	 * gets the current One Time Password for the assigned secret.
+	 *
+	 * @return - String
+	 */
+	public String getOTPString() {
+		return formatOTPString(String.valueOf(gAuth.getTotpPassword(this.paramSecret)));
+	}
+
+	/**
+	 * gets the One Time Password for the assigned secret, based on the time value passed in as argument.
+	 *
+	 * @param time - long
+	 * @return - String
+	 */
+	public String getOTPString(long time) {
+		return formatOTPString(String.valueOf(gAuth.getTotpPassword(this.paramSecret, time)));
+	}
+
+
+	/**
+	 * Same as getOTPString() only it will insert a dash(-) at the mid-point.
+	 *
+	 * @return - String
+	 */
+	public String getOTPSplit() {
+		String otpString = formatOTPString(String.valueOf(gAuth.getTotpPassword(this.paramSecret)));
+		return splitOTP(otpString);
+	}
+
+	/**
+	 * Same as getOTPString(long time) only it will insert a dash(-) at the mid-point.
+	 *
+	 * @return - String
+	 */
+	public String getOTPSplit(long time) {
+		String otpString = formatOTPString(String.valueOf(gAuth.getTotpPassword(this.paramSecret, time)));
+		return splitOTP(otpString);
+	}
+
+	/**
+	 * gets the current One Time Password for the assigned secret.
+	 *
+	 * @return - int
+	 */
+	public int getOTP() {
+		return gAuth.getTotpPassword(this.paramSecret);
+	}
+
+	/**
+	 * gets the One Time Password for the assigned secret, based on the time value passed in as argument.
+	 *
+	 * @param time - long
+	 * @return - int
+	 */
+	public int getOTP(long time) {
+		return gAuth.getTotpPassword(this.paramSecret, time);
 	}
 
 	/**

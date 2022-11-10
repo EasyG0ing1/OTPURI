@@ -9,21 +9,21 @@ The Library is available as a Maven dependency on Central. Add the following to 
 <dependency>
     <groupId>com.simtechdata</groupId>
     <artifactId>OTPURI</artifactId>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
 </dependency>
 ```
 
 Or, if using Gradle to build, add this to your Gradle build file
 
 ```groovy
-compile group: 'com.simtechdata', name: 'OTPURI', version: 1.0.3
+compile group: 'com.simtechdata', name: 'OTPURI', version: 1.0.4
 ```
 
 You can even use it from a Groovy script!
 
 ```groovy
 @Grapes(
-  @Grab(group='com.simtechdata', module='OTPURI', version=1.0.3)
+  @Grab(group='com.simtechdata', module='OTPURI', version=1.0.4)
 )
 ```
 
@@ -170,6 +170,29 @@ Where digits can **ONLY** have one of three values: **6**, **7** or **8**. Any o
 
 The period can **ONLY** take one of three values: **15**, **30** or **60** - same deal on throwing the exception as above.
 
+## One Time Password
+You can get the current One Time Password as a String or an int, from the current instant in time or based on a time that you pass in as a long.
+
+It is essential that any machine that runs this code, has its clock synchronized to an Internet ntp server, or else the OTP password that is generated will not be in sync with the server that you're trying to log into.
+```Java
+.getOTPString();
+.getOTPString(long time);
+.getOTP();
+.getOTP(long time);
+```
+
+If you want the returned One Time Password divided with a dash at the mid point, use these methods
+```Java
+.getOTPSplit()
+.getOTPSplit(long time)
+```
+Will return OTP Strings that will be formatted like this
+```
+034-956   (6 digits)
+034-9568  (7 digits)
+0349-5683 (8 digits)
+```
+All methods for the One Time Password that return a String will pre-pend the number with 0's if the password happens to be less digits than designated.
 ## toString()
 You can rely on the libraries default toString() ```@Override``` when passing an instance into a method that accepts Strings, WITHOUT needing to type .toString() as Java String arguments will automatically take the ```@Override```toString() method.
 
@@ -193,6 +216,9 @@ This library was compiled in Java 19. If you need an earlier version, fork the r
 
 Version Update Notes
 ---
+* **1.0.4**
+    * Added methods to retrieve the One Time Password
+
 * **1.0.3**
     * Fixed bug in Issuer balancing logic
 
