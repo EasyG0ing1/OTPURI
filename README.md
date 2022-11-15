@@ -9,21 +9,21 @@ The Library is available as a Maven dependency on Central. Add the following to 
 <dependency>
     <groupId>com.simtechdata</groupId>
     <artifactId>OTPURI</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5</version>
 </dependency>
 ```
 
 Or, if using Gradle to build, add this to your Gradle build file
 
 ```groovy
-compile group: 'com.simtechdata', name: 'OTPURI', version: 1.0.4
+compile group: 'com.simtechdata', name: 'OTPURI', version: 1.0.5
 ```
 
 You can even use it from a Groovy script!
 
 ```groovy
 @Grapes(
-  @Grab(group='com.simtechdata', module='OTPURI', version=1.0.4)
+  @Grab(group='com.simtechdata', module='OTPURI', version=1.0.5)
 )
 ```
 
@@ -46,7 +46,12 @@ These three elements are recommended as a minimum amount of information for a gi
 - Secret
 
 The only MANDATORY field is the secret field. If that field has no data in it, the library will throw a RuntimeException error.
-
+```Java
+OTPURI otpuri = new OTPURI.Builder(otpAuthString).build();
+System.out.println(otpuri.getOTPAuthString());
+System.out.println(otpuri.getOTPAuthStringDecoded());
+```
+OR
 ```Java
 OTPURI otpuri = new OTPURI.Builder()
                     .issuer("Some Company Or Web Site")
@@ -193,6 +198,30 @@ Will return OTP Strings that will be formatted like this
 0349-5683 (8 digits)
 ```
 All methods for the One Time Password that return a String will pre-pend the number with 0's if the password happens to be less digits than designated.
+
+## Login URL
+You can assign a URL to an instance of OTPURI, which has no invasive effects on the OTPAuth String. This 
+is merely for your convenience so that you can keep a URL associated with the OTP for reference in your app.
+```Java
+.setLoginURL(String);
+.getLoginURL();
+```
+
+## Equals()
+Sometimes it is convenient to pass an instance of OTPURI over to another instance to find out if the two instances 
+would result in producing the exact same OTPAuth String in the interest of not keeping duplicates floating around. That
+is what this method does, it compares another instance of OTPURI with itself and returns true if both ```.toString()```
+methods match.
+```Java
+.equals(myOTPUri);
+```
+
+## Same Secret
+This is the same as ```equals()``` but it only compares the two secrets and returns true if they are the same.
+```Java
+.sameSecret(myOTPUri);
+```
+
 ## toString()
 You can rely on the libraries default toString() ```@Override``` when passing an instance into a method that accepts Strings, WITHOUT needing to type .toString() as Java String arguments will automatically take the ```@Override```toString() method.
 
@@ -216,6 +245,10 @@ This library was compiled in Java 19. If you need an earlier version, fork the r
 
 Version Update Notes
 ---
+* **1.0.5**
+    * Added loginURL to the library
+    * Added equals() method
+
 * **1.0.4**
     * Added methods to retrieve the One Time Password
 

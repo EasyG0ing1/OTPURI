@@ -16,13 +16,14 @@ public class OTPURI {
 
 	private static final String              resource = "otpauth";
 	private static final String              protocol = "totp";
-	private final        String              labelIssuer;
-	private final        String              labelAccount;
-	private final        String              paramSecret;
-	private final        String              paramIssuer;
-	private final        Algorithm           paramAlgorithm; //Options: SHA1, SHA256, SHA512; default = SHA1
-	private final        String              paramDigits; //Number of digits to return, default = 6
-	private final        String              paramPeriod; //In Seconds, default = 30
+	private              String              labelIssuer;
+	private              String              labelAccount;
+	private              String              paramSecret;
+	private              String              paramIssuer;
+	private              Algorithm           paramAlgorithm; //Options: SHA1, SHA256, SHA512; default = SHA1
+	private              String              paramDigits; //Number of digits to return, default = 6
+	private              String              paramPeriod; //In Seconds, default = 30
+	private              String              loginURL;
 	private final        GoogleAuthenticator gAuth;
 
 	/**
@@ -104,6 +105,7 @@ public class OTPURI {
 		private Algorithm paramAlgorithm    = Algorithm.SHA1; //Options: SHA1, SHA256, SHA512; default = SHA1
 		private String    paramDigits       = "6"; //Number of digits to return, default = 6
 		private String    paramPeriod       = "30"; //In Seconds, default = 30
+		private String    loginURL          = ""; //In Seconds, default = 30
 		private boolean   setFromAuthString = false;
 
 		/**
@@ -193,6 +195,16 @@ public class OTPURI {
 		}
 
 		/**
+		 * Set the URL that has the login controls for the OTP account
+		 *
+		 * @param loginURL - String
+		 */
+		public Builder loginURL(String loginURL) {
+			this.loginURL = loginURL;
+			return this;
+		}
+
+		/**
 		 * This returns the OTPURI class that has been built with this Builder class
 		 */
 		public OTPURI build() {
@@ -225,6 +237,7 @@ public class OTPURI {
 		this.paramAlgorithm = build.paramAlgorithm;
 		this.paramDigits    = build.paramDigits;
 		this.paramPeriod    = build.paramPeriod;
+		this.loginURL       = build.loginURL;
 		this.gAuth          = new GoogleAuthenticator();
 	}
 
@@ -251,7 +264,7 @@ public class OTPURI {
 			   ((paramPeriod.isEmpty()) ? paramPeriod : "&period=" + paramPeriod);
 	}
 
-	private String formatOTPString(String otpString) {
+	private String zeroPadding(String otpString) {
 		int digits = Integer.parseInt(paramDigits);
 		int delta  = digits - otpString.length();
 		return "0".repeat(Math.max(0, delta)) + otpString;
@@ -275,6 +288,31 @@ public class OTPURI {
 			}
 		}
 		return otpLeft + "-" + otpRight;
+	}
+
+
+	/**
+	 * It can be beneficial in the interest of ensuring you do not keep duplicate OTPAuth Strings in memory,
+	 * to be able to compare this class instance against another instance of this class to find out if the
+	 * OTPAuth Strings are the same. And that is what this methods does.
+	 *
+	 * @param otpuri - an OTPURI instance
+	 * @return - true if argument is same as instance
+	 */
+	public boolean equals(OTPURI otpuri) {
+		return this.toString().equals(otpuri.toString());
+	}
+
+	/**
+	 * Sometimes it's nice to know if two OTPURI objects have the same secret where other aspects
+	 * of the object might be different from one another. This will tell you with absolute certainty
+	 * if teo OTPURI objects are the same at their core level.
+	 *
+	 * @param otpuri - an OTPURI instance
+	 * @return - true if this secret is same as instance
+	 */
+	public boolean sameSecret(OTPURI otpuri) {
+		return this.getSecret().equals(otpuri.getSecret());
 	}
 
 	/**
@@ -325,6 +363,24 @@ public class OTPURI {
 	 * @return - String
 	 */
 	public String getIssuer() {
+		return (labelIssuer.isEmpty() ? paramIssuer : labelIssuer);
+	}
+
+	/**
+	 * gets the Issuer assigned to the label
+	 *
+	 * @return - String
+	 */
+	public String getLabelIssuer() {
+		return labelIssuer;
+	}
+
+	/**
+	 * gets the Issuer assigned to the parameter
+	 *
+	 * @return - String
+	 */
+	public String getParamIssuer() {
 		return paramIssuer;
 	}
 
@@ -333,8 +389,18 @@ public class OTPURI {
 	 *
 	 * @return - String
 	 */
-	public String getAlgorithm() {
+	public String getAlgorithmString() {
 		return paramAlgorithm.get();
+	}
+
+
+	/**
+	 * gets the algorithm from the OTPAuth String
+	 *
+	 * @return - Algorithm
+	 */
+	public Algorithm getAlgorithm() {
+		return paramAlgorithm;
 	}
 
 	/**
@@ -361,7 +427,7 @@ public class OTPURI {
 	 * @return - String
 	 */
 	public String getOTPString() {
-		return formatOTPString(String.valueOf(gAuth.getTotpPassword(this.paramSecret)));
+		return zeroPadding(String.valueOf(gAuth.getTotpPassword(this.paramSecret)));
 	}
 
 	/**
@@ -371,7 +437,7 @@ public class OTPURI {
 	 * @return - String
 	 */
 	public String getOTPString(long time) {
-		return formatOTPString(String.valueOf(gAuth.getTotpPassword(this.paramSecret, time)));
+		return zeroPadding(String.valueOf(gAuth.getTotpPassword(this.paramSecret, time)));
 	}
 
 
@@ -381,7 +447,7 @@ public class OTPURI {
 	 * @return - String
 	 */
 	public String getOTPSplit() {
-		String otpString = formatOTPString(String.valueOf(gAuth.getTotpPassword(this.paramSecret)));
+		String otpString = zeroPadding(String.valueOf(gAuth.getTotpPassword(this.paramSecret)));
 		return splitOTP(otpString);
 	}
 
@@ -391,8 +457,92 @@ public class OTPURI {
 	 * @return - String
 	 */
 	public String getOTPSplit(long time) {
-		String otpString = formatOTPString(String.valueOf(gAuth.getTotpPassword(this.paramSecret, time)));
+		String otpString = zeroPadding(String.valueOf(gAuth.getTotpPassword(this.paramSecret, time)));
 		return splitOTP(otpString);
+	}
+
+	/**
+	 * gets the login URL that was assigned with setLoginURL()
+	 *
+	 * @return - String
+	 */
+	public String getLoginURL() {
+		return (loginURL != null) ? loginURL : "";
+	}
+
+
+	/**
+	 * Set the Issuer for the Label
+	 *
+	 * @param issuer - String
+	 */
+	public void setLabelIssuer(String issuer) {
+		this.labelIssuer = issuer;
+	}
+
+	/**
+	 * Set the user login name for the Label
+	 *
+	 * @param account - String
+	 */
+	public void setAccount(String account) {
+		this.labelAccount = account;
+	}
+
+	/**
+	 * Set the Secret for the OTP
+	 *
+	 * @param secret - String
+	 */
+	public void setSecret(String secret) {
+		this.paramSecret = secret;
+	}
+
+	/**
+	 * Set the Issuer for the parameter
+	 *
+	 * @param issuer - String
+	 */
+	public void setParamIssuer(String issuer) {
+		this.paramIssuer = issuer;
+	}
+
+	/**
+	 * Set the algorithm
+	 *
+	 * @param algorithm - Algorithm
+	 */
+	public void setAlgorithm(Algorithm algorithm) {
+		this.paramAlgorithm = algorithm;
+	}
+
+	/**
+	 * set the number of digits
+	 * Must be either 6, 7, or 8
+	 *
+	 * @param digits - Integer
+	 */
+	public void setDigits(Integer digits) {
+		this.paramDigits = String.valueOf(digits);
+	}
+
+	/**
+	 * Set the period of time before password times out
+	 * Must be either 15, 30, or 60
+	 *
+	 * @param period - Integer
+	 */
+	public void setPeriod(Integer period) {
+		this.paramPeriod = String.valueOf(period);
+	}
+
+	/**
+	 * Use this to set the loginURL for the site this OTPAuth was generated for.
+	 *
+	 * @param loginURL - String
+	 */
+	public void setLoginURL(String loginURL) {
+		this.loginURL = loginURL;
 	}
 
 	/**
