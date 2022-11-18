@@ -9,21 +9,21 @@ The Library is available as a Maven dependency on Central. Add the following to 
 <dependency>
     <groupId>com.simtechdata</groupId>
     <artifactId>OTPURI</artifactId>
-    <version>1.0.5</version>
+    <version>1.0.6</version>
 </dependency>
 ```
 
 Or, if using Gradle to build, add this to your Gradle build file
 
 ```groovy
-compile group: 'com.simtechdata', name: 'OTPURI', version: 1.0.5
+compile group: 'com.simtechdata', name: 'OTPURI', version: 1.0.6
 ```
 
 You can even use it from a Groovy script!
 
 ```groovy
 @Grapes(
-  @Grab(group='com.simtechdata', module='OTPURI', version=1.0.5)
+  @Grab(group='com.simtechdata', module='OTPURI', version=1.0.6)
 )
 ```
 
@@ -35,9 +35,7 @@ requires com.simtechdata.otpuri;
 
 ## Usage
 
-The library uses standard Builder style to create your OTPAuth String either by passing in
-a completely populated or partially populated OTPAuth String, or by specifying each element
-of the String. You can even leave elements out and the library will always give you back a
+The library uses standard Builder style to create your OTPAuth String either by passing in a completely populated or partially populated OTPAuth String, or by specifying each element of the String. You can even leave elements out and the library will always give you back a
 **properly formatted, fully populated** URI String.
 
 These three elements are recommended as a minimum amount of information for a given OTPAuth String so that you can quickly find that Auth code for whatever site you need to log into:
@@ -101,7 +99,10 @@ Where Label contains one or both of these fields
 ```
 <Issuer>/<UserName>
 ```
-If only one element is provided in the Label, OTPURI assumes it is the UserName and if none are given, then it makes up those fields as stated in the section above.
+If only one element is provided in the Label, OTPURI assumes it is the UserName and if none are given, then it makes up those fields as stated in the section above. You can tell your Builder sentence to assume that field is the Issuer by adding this into your sentence:
+```Java
+.assume(Assume.ISSUER);
+```
 
 Parameters **must have a secret stated**, but can also have one or more of these fields: 
 ```
@@ -209,8 +210,7 @@ is merely for your convenience so that you can keep a URL associated with the OT
 
 ## Equals()
 Sometimes it is convenient to pass an instance of OTPURI over to another instance to find out if the two instances 
-would result in producing the exact same OTPAuth String in the interest of not keeping duplicates floating around. That
-is what this method does, it compares another instance of OTPURI with itself and returns true if both ```.toString()```
+would result in producing the exact same OTPAuth String in the interest of not keeping duplicates floating around. That is what this method does, it compares another instance of OTPURI with itself and returns true if both ```.toString()```
 methods match.
 ```Java
 .equals(myOTPUri);
@@ -245,6 +245,11 @@ This library was compiled in Java 19. If you need an earlier version, fork the r
 
 Version Update Notes
 ---
+* **1.0.6**
+    * Bug fixes
+    * Improvements in the way an otpAuth String is parsed
+    * Improvements in processing otpAuth Strings from GoogleAuthenticator
+
 * **1.0.5**
     * Added loginURL to the library
     * Added equals() method

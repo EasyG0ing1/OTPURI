@@ -9,6 +9,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.simtechdata.otpuri.OTPParts.*;
 
@@ -42,23 +44,26 @@ public class OTPURI {
 		 * @param otpAuthString - OTPAuth String from QR Code
 		 */
 		public Builder(String otpAuthString) {
-			Map<OTPParts, String> partsMap = getPartsMap(otpAuthString);
-			if (partsMap != null) {
-				for (OTPParts part : partsMap.keySet()) {
-					switch (part) {
-						case LABEL_ISSUER -> labelIssuer = partsMap.get(LABEL_ISSUER);
-						case LABEL_ACCOUNT -> accountName = partsMap.get(LABEL_ACCOUNT);
-						case PARAM_SECRET -> paramSecret = partsMap.get(PARAM_SECRET);
-						case PARAM_ISSUER -> paramIssuer = partsMap.get(PARAM_ISSUER);
-						case PARAM_ALGORITHM -> paramAlgorithm = Algorithm.getAlgorithm(partsMap.get(PARAM_ALGORITHM));
-						case PARAM_DIGITS -> paramDigits = partsMap.get(PARAM_DIGITS);
-						case PARAM_PERIOD -> paramPeriod = partsMap.get(PARAM_PERIOD);
-					}
-				}
-			}
+			this.otpAuthString = otpAuthString;
 		}
 
-		private Map<OTPParts, String> getPartsMap(String otpAuthString) {
+		private String[] parseData(String data) {
+			String[] parsed = new String[2];
+			String regex = "(.+)(\\()(.+)(\\))";
+			Pattern p = Pattern.compile(regex);
+			Matcher m = p.matcher(data);
+			if(m.matches()) {
+				parsed[0] = m.group(3);
+				parsed[1] = m.group(1);
+			}
+			else {
+				parsed[0] = "";
+				parsed[1] = "";
+			}
+			return parsed;
+		}
+
+		private Map<OTPParts, String> getPartsMap() {
 			Map<OTPParts, String> map         = new HashMap<>();
 			String                finalString = URLDecoder.decode(otpAuthString, StandardCharsets.ISO_8859_1);
 			if (!finalString.contains(resource)) {
@@ -67,13 +72,20 @@ public class OTPURI {
 			String[] lines = finalString.replaceFirst(resource + "://(hotp|totp)/", "").replaceFirst(resource + "://(hotp|totp)", "").split("\\?");
 			String   first = lines[0];
 			String   last  = lines[1];
-			if (first.contains(":")) {
+
+			if(first.contains("(") && first.contains(")")) {
+				String[] parsed = parseData(first);
+				map.put(LABEL_ISSUER,parsed[0]);
+				map.put(LABEL_ACCOUNT,parsed[1]);
+			}
+			else if (first.contains(":")) {
 				String[] labelParts = first.split(":");
 				map.put(LABEL_ISSUER, labelParts[LABEL_ISSUER.index()]);
 				map.put(LABEL_ACCOUNT, labelParts[LABEL_ACCOUNT.index()]);
 			}
 			else if (first.length() > 2) {
-				map.put(LABEL_ACCOUNT, first);
+				if (assume.equals(Assume.ISSUER)) {map.put(LABEL_ISSUER, first);}
+				else {map.put(LABEL_ACCOUNT, first);}
 			}
 			String[] otpParameterArray = last.split("&");
 			for (String otpParameter : otpParameterArray) {
@@ -91,15 +103,20 @@ public class OTPURI {
 			boolean hasIssuerParameter = map.containsKey(PARAM_ISSUER);
 			boolean hasIssuerLabel     = map.containsKey(LABEL_ISSUER);
 			boolean addIssuerParameter = hasIssuerLabel && !hasIssuerParameter;
-			boolean addIssuerLabel     = hasIssuerParameter && !hasIssuerLabel;
 			if (addIssuerParameter) {map.put(PARAM_ISSUER, map.get(LABEL_ISSUER));}
-			if (addIssuerLabel) {map.put(LABEL_ISSUER, map.get(PARAM_ISSUER));}
+			if (hasIssuerParameter) {
+				if(hasIssuerLabel)
+					map.replace(LABEL_ISSUER, map.get(PARAM_ISSUER));
+				else
+					map.put(LABEL_ISSUER, map.get(PARAM_ISSUER));
+			}
 			setFromAuthString = true;
 			return map;
 		}
 
-		private String    labelIssuer;
-		private String    accountName;
+		private String    labelIssuer       = "";
+		private String    accountName       = "";
+		private String    otpAuthString     = "";
 		private String    paramSecret       = "";
 		private String    paramIssuer       = "";
 		private Algorithm paramAlgorithm    = Algorithm.SHA1; //Options: SHA1, SHA256, SHA512; default = SHA1
@@ -107,11 +124,26 @@ public class OTPURI {
 		private String    paramPeriod       = "30"; //In Seconds, default = 30
 		private String    loginURL          = ""; //In Seconds, default = 30
 		private boolean   setFromAuthString = false;
+		private Assume    assume            = Assume.USERNAME;
+
+		/**
+		 * This lets you chose the behavior if only one element is provided in an otpAuth String.
+		 * You can tell the library to Assume.USERNAME or Assume.COMPANY which will then place the
+		 * single Label element under that specific label.
+		 *
+		 * @param assume - Assume
+		 * @return Builder
+		 */
+		public Builder assume(Assume assume) {
+			this.assume = assume;
+			return this;
+		}
 
 		/**
 		 * Pass in the name of Issuer to be assigned to the Label portion of the OTPAuth String
 		 *
 		 * @param issuer - String
+		 * @return Builder
 		 */
 		public Builder labelIssuer(String issuer) {
 			this.labelIssuer = issuer;
@@ -123,6 +155,7 @@ public class OTPURI {
 		 * This might be different under unknown special cases
 		 *
 		 * @param issuer - String
+		 * @return Builder
 		 */
 		public Builder paramIssuer(String issuer) {
 			this.paramIssuer = issuer;
@@ -133,6 +166,7 @@ public class OTPURI {
 		 * Pass in the name of the issuer to be used on both the Label and Parameter oprtion of the OTPAuth String
 		 *
 		 * @param issuer - String
+		 * @return Builder
 		 */
 		public Builder issuer(String issuer) {
 			this.labelIssuer = issuer;
@@ -144,6 +178,7 @@ public class OTPURI {
 		 * Pass in the account name of the account that logs into the web site
 		 *
 		 * @param accountName - String
+		 * @return Builder
 		 */
 		public Builder accountName(String accountName) {
 			this.accountName = accountName;
@@ -154,6 +189,7 @@ public class OTPURI {
 		 * Pass in the secret that was generated at the time two factor authentication was enabled on the website.
 		 *
 		 * @param secret - String
+		 * @return Builder
 		 */
 		public Builder secret(String secret) {
 			this.paramSecret = secret;
@@ -165,6 +201,7 @@ public class OTPURI {
 		 * This must be of the Algorithm enum datatype
 		 *
 		 * @param algorithm - Algorithm enum
+		 * @return Builder
 		 */
 		public Builder algorithm(Algorithm algorithm) {
 			this.paramAlgorithm = algorithm;
@@ -175,6 +212,7 @@ public class OTPURI {
 		 * Pass in the number of One Time Password digits what will be returned when the OTP is generated
 		 *
 		 * @param returnDigits - int (6, 7, or 8)
+		 * @return Builder
 		 */
 		public Builder digits(int returnDigits) {
 			if (returnDigits < 6 || returnDigits > 8) {throw new RuntimeException("digits must be one of these numbers: 6, 7, or 8");}
@@ -186,6 +224,7 @@ public class OTPURI {
 		 * Pass in the amount of time that the One Time Password will be valid
 		 *
 		 * @param period - int (15, 30 or 60)
+		 * @return Builder
 		 */
 		public Builder period(int period) {
 			boolean valid = (period == 15) || (period == 30) || (period == 60);
@@ -198,6 +237,7 @@ public class OTPURI {
 		 * Set the URL that has the login controls for the OTP account
 		 *
 		 * @param loginURL - String
+		 * @return Builder
 		 */
 		public Builder loginURL(String loginURL) {
 			this.loginURL = loginURL;
@@ -206,17 +246,37 @@ public class OTPURI {
 
 		/**
 		 * This returns the OTPURI class that has been built with this Builder class
+		 *
+		 * @return OTPURI
 		 */
 		public OTPURI build() {
-			if (paramSecret.isEmpty()) {throw new RuntimeException("No secret was provided yet it is mandatory.");}
+			if (!otpAuthString.isEmpty()) {
+				Map<OTPParts, String> partsMap = getPartsMap();
+				if (partsMap != null) {
+					for (OTPParts part : partsMap.keySet()) {
+						switch (part) {
+							case LABEL_ISSUER -> labelIssuer = partsMap.get(LABEL_ISSUER);
+							case LABEL_ACCOUNT -> accountName = partsMap.get(LABEL_ACCOUNT);
+							case PARAM_SECRET -> paramSecret = partsMap.get(PARAM_SECRET);
+							case PARAM_ISSUER -> paramIssuer = partsMap.get(PARAM_ISSUER);
+							case PARAM_ALGORITHM -> paramAlgorithm = Algorithm.getAlgorithm(partsMap.get(PARAM_ALGORITHM));
+							case PARAM_DIGITS -> paramDigits = partsMap.get(PARAM_DIGITS);
+							case PARAM_PERIOD -> paramPeriod = partsMap.get(PARAM_PERIOD);
+						}
+					}
+				}
+				if (paramSecret.isEmpty()) {throw new RuntimeException("No secret was provided yet it is mandatory.");}
 
-			if (accountName.isEmpty()) {accountName = "UnknownUsername";}
+				if (accountName.isEmpty()) {accountName = "UnknownUsername";}
 
-			if (setFromAuthString) {
-				if (labelIssuer.isEmpty() && paramIssuer.isEmpty()) {
+				if (setFromAuthString) {
 					String issuer = randomCompany();
-					labelIssuer = issuer;
-					paramIssuer = issuer;
+					boolean issuerEmpty = (labelIssuer == null) ? true : labelIssuer.isEmpty();
+					boolean paramIssuerEmpty = (paramIssuer == null) ? true : paramIssuer.isEmpty();
+					if(issuerEmpty)
+						labelIssuer = issuer;
+					if(paramIssuerEmpty)
+						paramIssuer = issuer;
 				}
 			}
 			return new OTPURI(this);
