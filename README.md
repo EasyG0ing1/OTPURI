@@ -9,21 +9,21 @@ The Library is available as a Maven dependency on Central. Add the following to 
 <dependency>
     <groupId>com.simtechdata</groupId>
     <artifactId>OTPURI</artifactId>
-    <version>1.0.6</version>
+    <version>1.2.1</version>
 </dependency>
 ```
 
 Or, if using Gradle to build, add this to your Gradle build file
 
 ```groovy
-compile group: 'com.simtechdata', name: 'OTPURI', version: 1.0.6
+compile group: 'com.simtechdata', name: 'OTPURI', version: 1.2.1
 ```
 
 You can even use it from a Groovy script!
 
 ```groovy
 @Grapes(
-  @Grab(group='com.simtechdata', module='OTPURI', version=1.0.6)
+  @Grab(group='com.simtechdata', module='OTPURI', version=1.2.1)
 )
 ```
 
@@ -222,6 +222,9 @@ This is the same as ```equals()``` but it only compares the two secrets and retu
 .sameSecret(myOTPUri);
 ```
 
+## Notes
+Using the Builder `.notes(String)` method in your build sentence, or leveraging `.setNotes(String)` post build, you can assign any text you want to the OTPURI object as needed. To get the notes that are assigned to the object, simply call the `.getNotes()` method.
+
 ## toString()
 You can rely on the libraries default toString() ```@Override``` when passing an instance into a method that accepts Strings, WITHOUT needing to type .toString() as Java String arguments will automatically take the ```@Override```toString() method.
 
@@ -245,6 +248,14 @@ This library was compiled in Java 19. If you need an earlier version, fork the r
 
 Version Update Notes
 ---
+* **1.2.1**
+    * Added Builder constructor allowing you to create a new instance from an existing instance.
+    * Removed unused dependencies.
+    * Misc updates and improvements.
+
+* **1.0.7**
+    * Added method setIssuer()
+
 * **1.0.6**
     * Bug fixes
     * Improvements in the way an otpAuth String is parsed
