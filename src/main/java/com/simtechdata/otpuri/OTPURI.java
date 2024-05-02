@@ -25,7 +25,7 @@ public class OTPURI {
 
     private static final String resource = "otpauth";
     private static final String protocol = "totp";
-    private int dbId;
+    private final int dbId;
     private String labelIssuer;
     private String labelAccount;
     private String paramSecret;
@@ -34,6 +34,8 @@ public class OTPURI {
     private String paramDigits; //Number of digits to return, default = 6
     private String paramPeriod; //In Seconds, default = 30
     private String loginURL;
+    private String loginUsername;
+    private String loginPassword;
     private String notes;
     private final GoogleAuthenticator gAuth;
 
@@ -163,6 +165,8 @@ public class OTPURI {
         private String paramDigits = "6"; //Number of digits to return, default = 6
         private String paramPeriod = "30"; //In Seconds, default = 30
         private String loginURL = "";
+        private String loginUsername = "";
+        private String loginPassword = "";
         private String notes = "";
         private boolean setFromAuthString = false;
         private Assume assume = Assume.USERNAME;
@@ -307,6 +311,28 @@ public class OTPURI {
         }
 
         /**
+         * Set the Login Username for the service that uses the OTP
+         *
+         * @param loginUsername - String
+         * @return Builder
+         */
+        public Builder loginUsername(String loginUsername) {
+            this.loginUsername = loginUsername;
+            return this;
+        }
+
+        /**
+         * Set the Login Password for the service that uses the OTP
+         *
+         * @param loginPassword - String
+         * @return Builder
+         */
+        public Builder loginPassword(String loginPassword) {
+            this.loginPassword = loginPassword;
+            return this;
+        }
+
+        /**
          * Set any misc notes that you wish to attach to this OTPURI object.
          *
          * @param notes - String
@@ -380,6 +406,8 @@ public class OTPURI {
         this.paramDigits = build.paramDigits;
         this.paramPeriod = build.paramPeriod;
         this.loginURL = build.loginURL;
+        this.loginUsername = build.loginUsername;
+        this.loginPassword = build.loginPassword;
         this.notes = build.notes;
         this.gAuth = new GoogleAuthenticator();
     }
@@ -646,6 +674,24 @@ public class OTPURI {
     }
 
     /**
+     * gets the login Username for the service that issued the OTP
+     *
+     * @return - String
+     */
+    public String getLoginUsername() {
+        return (loginUsername != null && !loginUsername.isEmpty()) ? loginUsername : "";
+    }
+
+    /**
+     * gets the login Password for the service that issued the OTP
+     *
+     * @return - String
+     */
+    public String getLoginPassword() {
+        return (loginPassword != null && !loginPassword.isEmpty()) ? loginPassword : "";
+    }
+
+    /**
      * gets whatever text is currently in the assigned notes for the object.
      *
      * @return String
@@ -726,6 +772,24 @@ public class OTPURI {
      */
     public void setLoginURL(String loginURL) {
         this.loginURL = loginURL;
+    }
+
+    /**
+     * Use this to set the loginURL for the site this OTPAuth was generated for.
+     *
+     * @param loginUsername - String
+     */
+    public void setLoginUsername(String loginUsername) {
+        this.loginUsername = loginUsername;
+    }
+
+    /**
+     * Use this to set the loginURL for the site this OTPAuth was generated for.
+     *
+     * @param loginPassword - String
+     */
+    public void setLoginPassword(String loginPassword) {
+        this.loginPassword = loginPassword;
     }
 
     /**
